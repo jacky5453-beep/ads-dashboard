@@ -932,6 +932,9 @@ function buildTfootRow(days, raw) {
     cpa:        '<td>'+(cpa>0?'NT$'+Math.round(cpa):'—')+'</td>',
     cpc:        '<td>'+(totTraf>0?'NT$'+(totAd/totTraf).toFixed(1):'—')+'</td>',
     conversion: '<td>'+(conv>0?fmt.pct(conv):'—')+'</td>',
+    shipping:   '<td class="red">'+fmt.full(days.reduce((s,d)=>s+Math.round((raw[d]?.orders||0)*210),0))+'</td>',
+    payment:    '<td class="red">'+fmt.full(days.reduce((s,d)=>s+Math.round((raw[d]?.revenue||0)*0.015),0))+'</td>',
+    box:        '<td class="red">'+fmt.full(days.reduce((s,d)=>s+Math.round((raw[d]?.orders||0)*14),0))+'</td>',
     netProfit:  '<td class="'+(totNet>=0?'pos':'neg')+'">'+fmt.full(totNet)+'</td>',
   };
 
@@ -1009,6 +1012,9 @@ function renderTable() {
               cpa:        (()=>{ const c=dailyAdFee>0&&dailyOrds>0?dailyAdFee/dailyOrds:0; return `<td>${c>0?'NT$'+Math.round(c):'<span class="null">—</span>'}</td>`; })(),
               cpc:        (()=>{ const t=dd.traffic||0; const c=dailyAdFee>0&&t>0?dailyAdFee/t:0; return `<td>${c>0?'NT$'+c.toFixed(1):'<span class="null">—</span>'}</td>`; })(),
               conversion: `<td>${dd.conversion!=null?fmt.pct(dd.conversion):'<span class="null">—</span>'}</td>`,
+              shipping:   `<td class="red">${dailyOrds>0?fmt.full(dailyShip):'<span class="null">—</span>'}</td>`,
+              payment:    `<td class="red">${dailyRev>0?fmt.full(dailyPay):'<span class="null">—</span>'}</td>`,
+              box:        `<td class="red">${dailyOrds>0?fmt.full(dailyBox):'<span class="null">—</span>'}</td>`,
               netProfit:  `<td class="${dailyNet>0?'pos':dailyNet<0?'neg':''}">${dailyRev>0?fmt.full(dailyNet):'<span class="null">—</span>'}</td>`,
             };
             const visibleCols = colDefs.filter(c=>c.visible);
@@ -1059,6 +1065,9 @@ const DEFAULT_COLS = [
   {key:'cpa',      label:'CPA',     visible:true,  fixed:false, type:'core'},
   {key:'cpc',      label:'CPC',     visible:true,  fixed:false, type:'core'},
   {key:'conversion',label:'轉換率', visible:false, fixed:false, type:'core'},
+  {key:'shipping', label:'運費',    visible:true,  fixed:false, type:'calc', title:'訂單×210'},
+  {key:'payment',  label:'金流',    visible:true,  fixed:false, type:'calc', title:'營收×1.5%'},
+  {key:'box',      label:'紙箱',    visible:true,  fixed:false, type:'calc', title:'訂單×14'},
   {key:'netProfit',label:'每日淨毛利',visible:true, fixed:false, type:'calc'},
 ];
 
