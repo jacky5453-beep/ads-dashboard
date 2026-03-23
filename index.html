@@ -603,7 +603,27 @@ function renderDash() {
   const sh = DATA[cur]; if(!sh) return;
   const m  = sh.monthly||{};
   const pm = DATA[prevKey(cur)]?.monthly||{};
-  const raw= sh.daily||{};
+  const rawBase = sh.daily||{};
+
+  // Merge dailyOverrides into raw so new data added via NL input shows in charts
+  const overrides = (dailyOverrides[cur]) || {};
+  const raw = {};
+  // Start with all keys from rawBase
+  for (const d of Object.keys(rawBase)) {
+    raw[d] = { ...(rawBase[d]||{}) };
+  }
+  // Merge in overrides — these cover days that might be null in rawBase
+  for (const d of Object.keys(overrides)) {
+    if (!raw[d]) raw[d] = {};
+    Object.assign(raw[d], overrides[d]);
+    // Recompute roas for overridden days if we have the data
+    const r = raw[d];
+    if (r.revenue != null && r.totalAd > 0) {
+      r.roas = r.revenue / r.totalAd;
+    } else if (r.revenue != null && r.selfAd > 0) {
+      r.roas = r.revenue / r.selfAd;
+    }
+  }
 
   // Only days with real data (revenue > 0 OR orders > 0)
   const days = Object.keys(raw).map(Number).sort((a,b)=>a-b)
@@ -816,7 +836,7 @@ function renderDash() {
           labels: days,
           datasets:[
             {label:'營收', data:revArr, backgroundColor:'rgba(0,229,160,.18)', borderColor:'#00e5a0', borderWidth:1.5, borderRadius:3, yAxisID:'y'},
-            {label:'廣告費', data:adArr, type:'line', borderColor:'#fbbf24', borderWidth:1.5, pointRadius:0, tension:.35, fill:false, yAxisID:'y1', spanGaps:true}
+            {label:'廣告費', data:adArr, type:'line', borderColor:'#fbbf24', borderWidth:1.5, pointRadius:3, pointBackgroundColor:'#fbbf24', tension:.35, fill:false, yAxisID:'y1', spanGaps:true}
           ]
         },
         options:{...CT,
@@ -867,7 +887,7 @@ function renderDash() {
         type:'line',
         data:{labels:days, datasets:[{
           label:'流量', data:trafArr, borderColor:'#22d3ee', borderWidth:2,
-          pointRadius:0, tension:.35, fill:{target:'origin',above:'rgba(34,211,238,.06)'}, spanGaps:true
+          pointRadius:3, pointBackgroundColor:'#22d3ee', tension:.35, fill:{target:'origin',above:'rgba(34,211,238,.06)'}, spanGaps:true
         }]},
         options:CT
       });
