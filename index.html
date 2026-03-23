@@ -616,20 +616,33 @@ function renderDash() {
   for (const d of Object.keys(overrides)) {
     if (!raw[d]) raw[d] = {};
     Object.assign(raw[d], overrides[d]);
-    // Recompute roas for overridden days if we have the data
     const r = raw[d];
+    // Also pull in extraDaily for this day (line, selfAd2, etc.)
+    const ex = (extraDaily[cur]||{})[d] || {};
+    // Recompute totalAd: selfAd + line + selfAd2 + sms + edm + kol
+    const selfAdVal  = r.selfAd   || 0;
+    const lineVal    = r.line     || ex.line    || 0;
+    const selfAd2Val = ex.selfAd2 || 0;
+    const smsVal     = ex.sms     || 0;
+    const edmVal     = ex.edm     || 0;
+    const kolVal     = ex.kol     || 0;
+    if (selfAdVal > 0 || lineVal > 0) {
+      r.totalAd = selfAdVal + lineVal + selfAd2Val + smsVal + edmVal + kolVal;
+    }
+    // Recompute roas
     if (r.revenue != null && r.totalAd > 0) {
       r.roas = r.revenue / r.totalAd;
-    } else if (r.revenue != null && r.selfAd > 0) {
-      r.roas = r.revenue / r.selfAd;
+    } else if (r.revenue != null && selfAdVal > 0) {
+      r.roas = r.revenue / selfAdVal;
     }
   }
 
   // Only days with real data (revenue > 0 OR orders > 0)
+  // Use string keys consistently to avoid number/string mismatch
   const days = Object.keys(raw).map(Number).sort((a,b)=>a-b)
-    .filter(d => (raw[d]?.revenue||0)>0 || (raw[d]?.orders||0)>0);
+    .filter(d => (raw[String(d)]?.revenue||0)>0 || (raw[String(d)]?.orders||0)>0);
 
-  const get = (arr, key) => arr.map(d => raw[d]?.[key]??null);
+  const get = (arr, key) => arr.map(d => raw[String(d)]?.[key]??raw[d]?.[key]??null);
   const revArr  = get(days,'revenue');
   const adArr   = get(days,'totalAd');
   const ordArr  = get(days,'orders');
