@@ -588,11 +588,18 @@ function addMonth() {
     return;
   }
 
-  // Create empty month structure with 1-31 days placeholder
+  // Create empty month structure
   DATA[newKey] = {
     daily: {},
     monthly: { revenue: 0, orders: 0, traffic: 0, selfAd: 0, line: 0, totalAd: 0, roas: 0, cpc: 0, cpa: 0 }
   };
+
+  // Persist to localStorage so it survives refresh
+  const addedMonths = loadLS(LS_ADDED_MONTHS, []);
+  if (!addedMonths.includes(newKey)) {
+    addedMonths.push(newKey);
+    saveLS(LS_ADDED_MONTHS, addedMonths);
+  }
 
   buildSidebar();
   pick(newKey);
@@ -1127,6 +1134,7 @@ const LS_FIN       = 'adash_finStore';
 const LS_HINTS     = 'adash_hints';
 const LS_COLS      = 'adash_columns';
 const LS_OVERRIDES = 'adash_overrides';  // core daily field edits
+const LS_ADDED_MONTHS = 'adash_addedMonths'; // user-created month keys
 
 // dailyOverrides: {monthKey: {day: {revenue, orders, traffic, selfAd, line, ...}}}
 const dailyOverrides = loadLS(LS_OVERRIDES, {});
@@ -1623,9 +1631,17 @@ const _origPick = typeof pick === 'function' ? pick : null;
 
 // ── INIT ──
 function applyStoredData() {
+  // Restore user-added months
+  const addedMonths = loadLS(LS_ADDED_MONTHS, []);
+  addedMonths.forEach(k => {
+    if (!DATA[k]) {
+      DATA[k] = { daily: {}, monthly: { revenue:0, orders:0, traffic:0, selfAd:0, line:0, totalAd:0, roas:0, cpc:0, cpa:0 } };
+    }
+  });
+
   // Apply dailyOverrides into DATA
   Object.keys(dailyOverrides).forEach(k => {
-    if (!DATA[k]) return;
+    if (!DATA[k]) DATA[k] = { daily: {}, monthly: {} };
     Object.keys(dailyOverrides[k]).forEach(day => {
       if (!DATA[k].daily) DATA[k].daily = {};
       if (!DATA[k].daily[day]) DATA[k].daily[day] = {};
