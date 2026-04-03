@@ -1002,7 +1002,7 @@ function buildTfootRow(days, raw) {
     const baseAd=Math.max(raw[d]?.totalAd||0,(raw[d]?.selfAd||0)+(raw[d]?.line||0));
     return s+baseAd+(e.selfAd2||0)+(e.sms||0)+(e.edm||0)+(e.kol||0);
   }, 0);
-  const totNet  = days.reduce((s,d)=>{const e=ex_all[d]||{};const r=raw[d]?.revenue||0,o=raw[d]?.orders||0,ad=(raw[d]?.totalAd||0)+(e.selfAd2||0)+(e.sms||0)+(e.edm||0)+(e.kol||0);return s+(r*0.45-ad-o*210-Math.round(r*0.015)-o*14);}, 0);
+  const totNet  = days.reduce((s,d)=>{const e=ex_all[d]||{};const r=raw[d]?.revenue||0,o=raw[d]?.orders||0,baseAd=Math.max(raw[d]?.totalAd||0,(raw[d]?.selfAd||0)+(raw[d]?.line||0)),ad=baseAd+(e.selfAd2||0)+(e.sms||0)+(e.edm||0)+(e.kol||0);return s+(r*0.45-ad-o*210-Math.round(r*0.015)-o*14);}, 0);
   const roas    = totAd > 0 ? totRev / totAd : 0;
   const cpa     = totOrd > 0 ? totAd / totOrd : 0;
   const conv    = totTraf > 0 ? totOrd / totTraf : 0;
