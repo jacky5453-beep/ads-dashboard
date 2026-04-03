@@ -476,6 +476,9 @@ td[data-edit]:hover,td[data-editex]:hover{background:rgba(0,229,160,.08);outline
     <div class="sidebar-subtitle">廣告成效數據 · 歷史儀表板</div>
   </div>
   <div class="sidebar-scroll" id="sidebarList"></div>
+  <div style="padding:10px 16px;border-top:1px solid var(--border);">
+    <button onclick="addMonth()" style="width:100%;padding:8px;border-radius:8px;background:var(--surface2);border:1px dashed var(--border2);color:var(--text2);cursor:pointer;font-size:12px;font-family:'Noto Sans TC',sans-serif;transition:all .15s;" onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">＋ 新增月份</button>
+  </div>
 </nav>
 
 <!-- Mobile sidebar overlay -->
@@ -547,6 +550,53 @@ function buildSidebar() {
     html += `</div></div>`;
   });
   document.getElementById('sidebarList').innerHTML = html;
+}
+
+function addMonth() {
+  // Find the latest month to suggest next one
+  const keys = Object.keys(DATA).sort();
+  let suggestYear = new Date().getFullYear();
+  let suggestMonth = new Date().getMonth() + 1;
+  if (keys.length > 0) {
+    const last = keys[keys.length - 1];
+    const [ly, lm] = last.split('.').map(Number);
+    if (lm === 12) { suggestYear = ly + 1; suggestMonth = 1; }
+    else { suggestYear = ly; suggestMonth = lm + 1; }
+  }
+  const suggestKey = suggestYear + '.' + String(suggestMonth).padStart(2, '0');
+
+  const input = prompt('請輸入要新增的月份（格式：YYYY.MM）', suggestKey);
+  if (!input) return;
+
+  const trimmed = input.trim();
+  const match = trimmed.match(/^(\d{4})\.(\d{2})$/);
+  if (!match) {
+    alert('格式錯誤，請使用 YYYY.MM 格式，例如 2026.04');
+    return;
+  }
+  const [, yearStr, monthStr] = match;
+  const monthNum = parseInt(monthStr);
+  if (monthNum < 1 || monthNum > 12) {
+    alert('月份必須在 01-12 之間');
+    return;
+  }
+
+  const newKey = yearStr + '.' + monthStr;
+  if (DATA[newKey]) {
+    alert('此月份已存在：' + newKey);
+    pick(newKey);
+    return;
+  }
+
+  // Create empty month structure with 1-31 days placeholder
+  DATA[newKey] = {
+    daily: {},
+    monthly: { revenue: 0, orders: 0, traffic: 0, selfAd: 0, line: 0, totalAd: 0, roas: 0, cpc: 0, cpa: 0 }
+  };
+
+  buildSidebar();
+  pick(newKey);
+  switchView('table');
 }
 
 function toggleYr(yr) {
